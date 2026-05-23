@@ -226,10 +226,7 @@ export default function App() {
         </main>
 
         <aside style={styles.side}>
-          <section style={styles.panelDark}>
-            <div style={styles.totalLabel}>合計 / {totalQty}点</div>
-            <div style={styles.total}>{yen(total)}</div>
-          </section>
+          
 
           <section style={styles.panel}>
             <h2 style={styles.panelTitle}>会計中</h2>
@@ -285,6 +282,9 @@ export default function App() {
             </div>
 
             <div style={styles.changeBox}>
+              <div style={styles.smallLabel}>合計 / {totalQty}点</div>
+              <div style={styles.total}>{yen(total)}</div>
+              <div style={{ height: 10 }} />
               <div style={styles.smallLabel}>お釣り</div>
               <div style={styles.change}>{yen(change)}</div>
             </div>
