@@ -311,6 +311,12 @@ export default function App() {
 
             <label style={styles.smallLabel}>お預かり金額</label>
             <div style={styles.paidDisplay}>{paid ? yen(paid) : "¥0"}</div>
+
+            <div style={styles.changeBox}>
+              <div style={styles.smallLabel}>お釣り</div>
+              <div style={styles.change}>{yen(change)}</div>
+            </div>
+
             <div style={styles.keypad}>
               {["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0", "BS"].map((key) => (
                 <button
@@ -324,11 +330,6 @@ export default function App() {
               <button style={styles.keypadClearButton} onClick={() => addPaidDigit("C")}>
                 C
               </button>
-            </div>
-
-            <div style={styles.changeBox}>
-              <div style={styles.smallLabel}>お釣り</div>
-              <div style={styles.change}>{yen(change)}</div>
             </div>
 
             <div style={styles.actionGrid}>
@@ -536,6 +537,14 @@ const styles = {
     background: "#fafafa",
     textAlign: "right",
   },
+  changeBox: {
+    background: "#fef3c7",
+    color: "#18181b",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+  },
+  change: { fontSize: 34, fontWeight: 950 },
   keypad: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
@@ -573,14 +582,6 @@ const styles = {
     fontWeight: 950,
     cursor: "pointer",
   },
-  changeBox: {
-    background: "#fef3c7",
-    color: "#18181b",
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-  },
-  change: { fontSize: 34, fontWeight: 950 },
   actionGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   clearButton: {
     border: 0,
