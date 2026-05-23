@@ -19,6 +19,20 @@ const items = [
 
 const yen = (num) => `¥${Number(num || 0).toLocaleString()}`;
 
+const shortCategory = (category) => {
+  if (category === "Tシャツ") return "T";
+  if (category === "アウター") return "A";
+  if (category === "トップス") return "TOP";
+  if (category === "小物") return "小物";
+  if (category === "その他") return "他";
+  return category;
+};
+
+const shortSize = (size) => {
+  if (size === "共通") return "共通";
+  return size.replace("cm", "");
+};
+
 const makeKey = (creator, item) =>
   `${creator.id}_${item.size}_${item.category}_${item.price}`;
 
@@ -202,8 +216,7 @@ export default function App() {
                     onClick={() => addItem(creator, item)}
                     style={{ ...styles.itemButton, background: creator.color }}
                   >
-                    <div style={styles.buttonSize}>{item.size}</div>
-                    <div style={styles.buttonCategory}>{item.category}</div>
+                    <div style={styles.buttonMain}>{shortSize(item.size)} {shortCategory(item.category)}</div>
                     <div style={styles.buttonPrice}>{yen(item.price)}</div>
                   </button>
                 ))}
@@ -367,28 +380,27 @@ const styles = {
   creatorSection: {
     background: "white",
     borderRadius: 24,
-    padding: 16,
+    padding: 12,
     boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
   },
-  creatorTitle: { margin: "0 0 12px", fontSize: 30 },
+  creatorTitle: { margin: "0 0 10px", fontSize: 24 },
   buttonGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-    gap: 10,
+    gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))",
+    gap: 8,
   },
   itemButton: {
     color: "white",
     border: 0,
-    borderRadius: 18,
-    padding: 16,
-    textAlign: "left",
+    borderRadius: 14,
+    padding: 10,
+    textAlign: "center",
     cursor: "pointer",
-    minHeight: 116,
+    minHeight: 74,
     boxShadow: "0 3px 8px rgba(0,0,0,0.15)",
   },
-  buttonSize: { fontSize: 15, fontWeight: 800, opacity: 0.85 },
-  buttonCategory: { fontSize: 24, fontWeight: 900, marginTop: 4 },
-  buttonPrice: { fontSize: 26, fontWeight: 900, marginTop: 8 },
+  buttonMain: { fontSize: 21, fontWeight: 950, lineHeight: 1.1 },
+  buttonPrice: { fontSize: 20, fontWeight: 950, marginTop: 6 },
   side: {
     display: "grid",
     gap: 12,
