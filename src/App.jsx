@@ -6,16 +6,27 @@ const creators = [
   { id: "mikako", name: "みかこ", color: "#18181b" },
 ];
 
-const items = [
-  { size: "15cm", category: "Tシャツ", price: 1800 },
-  { size: "21cm", category: "Tシャツ", price: 2200 },
-  { size: "15cm", category: "アウター", price: 2800 },
-  { size: "21cm", category: "アウター", price: 3200 },
-  { size: "15cm", category: "トップス", price: 2000 },
-  { size: "21cm", category: "トップス", price: 2400 },
-  { size: "共通", category: "小物", price: 500 },
-  { size: "共通", category: "その他", price: 1000 },
-];
+const creatorItems = {
+  asami: [
+    { size: "10cm", category: "Tシャツ", price: 600 },
+    { size: "10cm", category: "アウター", price: 800 },
+  ],
+  yurie: [
+    { size: "10cm", category: "サロペットセット", price: 1500 },
+    { size: "10cm", category: "Tシャツ", price: 700 },
+    { size: "10cm", category: "サロペット", price: 900 },
+    { size: "10cm", category: "ヘアバンド", price: 500 },
+    { size: "15cm", category: "サロペットセット", price: 1800 },
+    { size: "15cm", category: "Tシャツ", price: 1000 },
+    { size: "15cm", category: "羽根つきTシャツ", price: 1500 },
+    { size: "15cm", category: "サロペット", price: 1000 },
+  ],
+  mikako: [
+    { size: "15cm", category: "Tシャツ", price: 1000 },
+    { size: "21cm", category: "Tシャツ", price: 1200 },
+    { size: "15cm", category: "ジャケット", price: 1200 },
+  ],
+};
 
 const yen = (num) => `¥${Number(num || 0).toLocaleString()}`;
 
@@ -210,7 +221,7 @@ export default function App() {
                 {creator.name}
               </h2>
               <div style={styles.buttonGrid}>
-                {items.map((item) => (
+                {creatorItems[creator.id].map((item) => (
                   <button
                     key={makeKey(creator, item)}
                     onClick={() => addItem(creator, item)}
@@ -263,6 +274,11 @@ export default function App() {
               ))
             )}
 
+
+            <div style={styles.changeBox}>
+              <div style={styles.smallLabel}>合計 / {totalQty}点</div>
+              <div style={styles.total}>{yen(total)}</div>
+            </div>
 
             <label style={styles.smallLabel}>お預かり金額</label>
             <div style={styles.paidDisplay}>{paid ? yen(paid) : "¥0"}</div>
