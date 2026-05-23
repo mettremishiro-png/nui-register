@@ -34,6 +34,11 @@ const shortCategory = (category) => {
   if (category === "Tシャツ") return "T";
   if (category === "アウター") return "A";
   if (category === "トップス") return "TOP";
+  if (category === "サロペットセット") return "サロペSET";
+  if (category === "サロペット") return "サロペ";
+  if (category === "羽根つきTシャツ") return "羽根T";
+  if (category === "ヘアバンド") return "ヘアバン";
+  if (category === "ジャケット") return "JK";
   if (category === "小物") return "小物";
   if (category === "その他") return "他";
   return category;
@@ -50,7 +55,13 @@ const makeKey = (creator, item) =>
 export default function App() {
   const [cart, setCart] = useState([]);
   const [paid, setPaid] = useState("");
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("nui_sales_history") || "[]");
+    } catch {
+      return [];
+    }
+  });
   const [eventName, setEventName] = useState(
     localStorage.getItem("nui_event_name") || ""
   );
@@ -146,11 +157,15 @@ export default function App() {
       change,
       items: cart,
     };
-    setHistory((prev) => [sale, ...prev]);
+    setHistory((prev) => {
+      const next = [sale, ...prev];
+      localStorage.setItem("nui_sales_history", JSON.stringify(next));
+      return next;
+    });
     clearCart();
   };
 
-  const exportCSV = () => {
+  const makeCSV = () => {
     const header = [
       "イベント名",
       "会計日時",
@@ -181,18 +196,35 @@ export default function App() {
       ])
     );
 
-    const csv = [header, ...rows]
+    return [header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
       .join("\n");
+  };
 
+  const exportCSV = () => {
     const bom = "\uFEFF";
-    const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([bom + makeCSV()], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${eventName || "nui-register"}_sales.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const mailCSV = () => {
+    if (history.length === 0) return;
+    const subject = encodeURIComponent(`${eventName || "ぬい服レジ"} 売上CSV`);
+    const body = encodeURIComponent(
+      `売上CSVです。\n\n${makeCSV()}\n\n※件数が多い場合、メール本文が途中で切れることがあります。その場合はCSV保存も併用してください。`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const clearHistory = () => {
+    if (!window.confirm("履歴をすべて削除しますか？")) return;
+    setHistory([]);
+    localStorage.removeItem("nui_sales_history");
   };
 
   return (
@@ -237,8 +269,6 @@ export default function App() {
         </main>
 
         <aside style={styles.side}>
-          
-
           <section style={styles.panel}>
             <h2 style={styles.panelTitle}>会計中</h2>
 
@@ -274,9 +304,8 @@ export default function App() {
               ))
             )}
 
-
-            <div style={styles.changeBox}>
-              <div style={styles.smallLabel}>合計 / {totalQty}点</div>
+            <div style={styles.totalBox}>
+              <div style={styles.smallLabelLight}>合計 / {totalQty}点</div>
               <div style={styles.total}>{yen(total)}</div>
             </div>
 
@@ -298,9 +327,6 @@ export default function App() {
             </div>
 
             <div style={styles.changeBox}>
-              <div style={styles.smallLabel}>合計 / {totalQty}点</div>
-              <div style={styles.total}>{yen(total)}</div>
-              <div style={{ height: 10 }} />
               <div style={styles.smallLabel}>お釣り</div>
               <div style={styles.change}>{yen(change)}</div>
             </div>
@@ -328,18 +354,26 @@ export default function App() {
           <section style={styles.panel}>
             <div style={styles.historyHeader}>
               <h2 style={styles.panelTitle}>履歴</h2>
-              <button style={styles.csvButton} onClick={exportCSV} disabled={history.length === 0}>
-                CSV保存
-              </button>
+              <div style={styles.historyButtons}>
+                <button style={styles.csvButton} onClick={exportCSV} disabled={history.length === 0}>
+                  CSV保存
+                </button>
+                <button style={styles.mailButton} onClick={mailCSV} disabled={history.length === 0}>
+                  メール送信
+                </button>
+                <button style={styles.clearHistoryButton} onClick={clearHistory} disabled={history.length === 0}>
+                  履歴削除
+                </button>
+              </div>
             </div>
             {history.length === 0 ? (
-              <div style={styles.empty}>会計完了すると履歴が残ります</div>
+              <div style={styles.empty}>会計完了すると履歴が端末に保存されます</div>
             ) : (
               history.slice(0, 10).map((sale) => (
                 <div key={sale.id} style={styles.historyRow}>
                   <div>
                     <strong>{sale.time}</strong>
-                    <div style={styles.cartSub}>{sale.totalQty}点 / お預かり {yen(sale.paid)}</div>
+                    <div style={styles.cartSubDark}>{sale.totalQty}点 / お預かり {yen(sale.paid)}</div>
                   </div>
                   <strong>{yen(sale.total)}</strong>
                 </div>
@@ -355,14 +389,14 @@ export default function App() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#18181b",
+    background: "#f4f4f5",
     padding: 16,
     fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
     color: "#18181b",
   },
   header: {
     display: "flex",
-    gap: 16,
+    gap: 12,
     justifyContent: "space-between",
     alignItems: "center",
     background: "white",
@@ -376,6 +410,7 @@ const styles = {
   title: { margin: 0, fontSize: 36, lineHeight: 1.1 },
   eventBox: { minWidth: 260, flex: "1 1 300px" },
   smallLabel: { fontSize: 13, color: "#71717a", fontWeight: 800 },
+  smallLabelLight: { fontSize: 13, color: "#d4d4d8", fontWeight: 800 },
   eventInput: {
     width: "100%",
     boxSizing: "border-box",
@@ -392,7 +427,7 @@ const styles = {
     gap: 16,
     alignItems: "start",
   },
-  main: { display: "grid", gap: 16 },
+  main: { display: "grid", gap: 12 },
   creatorSection: {
     background: "white",
     borderRadius: 24,
@@ -429,15 +464,6 @@ const styles = {
     padding: 16,
     boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
   },
-  panelDark: {
-    background: "#18181b",
-    color: "white",
-    borderRadius: 24,
-    padding: 18,
-    boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-  },
-  totalLabel: { color: "#d4d4d8", fontWeight: 700 },
-  total: { fontSize: 52, fontWeight: 950, lineHeight: 1.1 },
   panelTitle: { margin: "0 0 10px", fontSize: 20 },
   empty: {
     padding: 16,
@@ -467,6 +493,7 @@ const styles = {
   },
   cartName: { fontSize: 18, fontWeight: 900, marginTop: 4 },
   cartSub: { color: "#d4d4d8", fontSize: 13, fontWeight: 700 },
+  cartSubDark: { color: "#71717a", fontSize: 13, fontWeight: 700 },
   qtyBox: { display: "flex", alignItems: "center", gap: 6 },
   qtyButton: {
     width: 38,
@@ -484,21 +511,19 @@ const styles = {
     border: 0,
     borderRadius: 999,
     padding: "9px 12px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  totalBox: {
     background: "#18181b",
     color: "white",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  paidGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 12 },
-  moneyButton: {
-    border: 0,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 12,
-    fontSize: 17,
-    fontWeight: 900,
-    background: "#e4e4e7",
-    cursor: "pointer",
+    margin: "12px 0",
   },
+  total: { fontSize: 44, fontWeight: 950, lineHeight: 1.1 },
   paidDisplay: {
     width: "100%",
     boxSizing: "border-box",
@@ -522,6 +547,7 @@ const styles = {
     borderRadius: 14,
     padding: 14,
     background: "#18181b",
+    color: "white",
     fontSize: 24,
     fontWeight: 950,
     cursor: "pointer",
@@ -541,13 +567,19 @@ const styles = {
     border: 0,
     borderRadius: 14,
     padding: 12,
-    background: "#fee2e2",
-    color: "#991b1b",
+    background: "#18181b",
+    color: "white",
     fontSize: 20,
     fontWeight: 950,
     cursor: "pointer",
   },
-  changeBox: { background: "#fef3c7", borderRadius: 16, padding: 12, marginBottom: 12 },
+  changeBox: {
+    background: "#fef3c7",
+    color: "#18181b",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+  },
   change: { fontSize: 34, fontWeight: 950 },
   actionGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   clearButton: {
@@ -577,6 +609,7 @@ const styles = {
     fontWeight: 800,
   },
   historyHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  historyButtons: { display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" },
   csvButton: {
     border: 0,
     borderRadius: 999,
@@ -586,13 +619,31 @@ const styles = {
     fontWeight: 900,
     cursor: "pointer",
   },
+  mailButton: {
+    border: 0,
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "#dbeafe",
+    color: "#1e40af",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  clearHistoryButton: {
+    border: 0,
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
   historyRow: {
     display: "flex",
     justifyContent: "space-between",
     gap: 8,
     padding: 10,
     borderRadius: 14,
-    background: "#18181b",
+    background: "#f4f4f5",
     marginBottom: 8,
   },
 };
