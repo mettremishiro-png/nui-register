@@ -275,21 +275,31 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const mailCSV = () => {
+  const shareCSV = async () => {
     if (history.length === 0) return;
     playSound("tap");
-    const subject = encodeURIComponent(`${eventName || "ぬい服レジ"} 売上CSV`);
-    const body = encodeURIComponent(
-      `売上CSVです。
 
-${makeCSV()}
+    const bom = "﻿";
+    const fileName = `${eventName || "nui-register"}_sales.csv`;
+    const file = new File([bom + makeCSV()], fileName, {
+      type: "text/csv;charset=utf-8;",
+    });
 
-※件数が多い場合、本文が途中で切れることがあります。その場合はCSV保存も併用してください。`
-    );
-    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-      SEND_TO_EMAIL
-    )}&su=${subject}&body=${body}`;
-    window.open(url, "_blank");
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `${eventName || "ぬい服レジ"} 売上CSV`,
+          text: "売上CSVを共有します。",
+          files: [file],
+        });
+        return;
+      } catch {
+        // 共有をキャンセルした場合などはCSV保存へ進む
+      }
+    }
+
+    exportCSV();
+    alert("この端末ではCSV添付の共有に対応していないため、CSVを保存しました。保存したCSVをメールに添付してください。");
   };
 
   const clearHistory = () => {
@@ -430,8 +440,8 @@ ${makeCSV()}
                 <button style={styles.csvButton} onClick={exportCSV} disabled={history.length === 0}>
                   CSV保存
                 </button>
-                <button style={styles.mailButton} onClick={mailCSV} disabled={history.length === 0}>
-                  メール送信
+                <button style={styles.mailButton} onClick={shareCSV} disabled={history.length === 0}>
+                  CSV共有
                 </button>
                 <button style={styles.clearHistoryButton} onClick={clearHistory} disabled={history.length === 0}>
                   履歴削除
