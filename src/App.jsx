@@ -78,9 +78,33 @@ export default function App() {
       return [];
     }
   });
-  const [eventName, setEventName] = useState(
-    localStorage.getItem("nui_event_name") || ""
-  );
+const [eventName, setEventName] = useState(
+  localStorage.getItem("nui_event_name") || ""
+);
+
+useEffect(() => {
+  fetch("https://script.google.com/macros/s/AKfycbyUjvgENAJ2m9EoPNlnO8M14YQPU4gECJHb-k1GAz3FUU3VjAgsU58KPdC96W6_SszbnQ/exec")
+    .then((res) => res.json())
+    .then((data) => {
+      const grouped = { asami: [], yurie: [], mikako: [] };
+
+      data.forEach((item) => {
+        if (!grouped[item.creator]) return;
+
+        grouped[item.creator].push({
+          size: item.size,
+          category: item.category,
+          price: Number(item.price),
+        });
+      });
+
+      setCreatorItems(grouped);
+      localStorage.setItem("nui_creator_items", JSON.stringify(grouped));
+    })
+    .catch(() => {
+      console.log("スプレッドシートの商品読込に失敗しました");
+    });
+}, []);
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
