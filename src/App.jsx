@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
+const SEND_TO_EMAIL = "stormromance@gmail.com";
+
 const creators = [
   { id: "asami", name: "あさみ", color: "#9333ea" },
   { id: "yurie", name: "ゆりえ", color: "#16a34a" },
@@ -89,7 +91,30 @@ export default function App() {
     });
   }, [cart]);
 
+  const playSound = (type = "tap") => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const audio = new AudioContext();
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+
+      oscillator.connect(gain);
+      gain.connect(audio.destination);
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = type === "done" ? 880 : type === "delete" ? 260 : 520;
+      gain.gain.setValueAtTime(0.06, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.08);
+
+      oscillator.start(audio.currentTime);
+      oscillator.stop(audio.currentTime + 0.08);
+    } catch {
+      // 音が鳴らない端末では何もしない
+    }
+  };
+
   const addItem = (creator, item) => {
+    playSound("tap");
     const key = makeKey(creator, item);
     setCart((prev) => {
       const exists = prev.find((row) => row.key === key);
@@ -113,6 +138,7 @@ export default function App() {
   };
 
   const changeQty = (key, diff) => {
+    playSound("tap");
     setCart((prev) =>
       prev
         .map((row) =>
@@ -123,10 +149,12 @@ export default function App() {
   };
 
   const removeItem = (key) => {
+    playSound("delete");
     setCart((prev) => prev.filter((row) => row.key !== key));
   };
 
   const clearCart = () => {
+    playSound("delete");
     setCart([]);
     setPaid("");
   };
@@ -137,6 +165,7 @@ export default function App() {
   };
 
   const addPaidDigit = (digit) => {
+    playSound("tap");
     setPaid((prev) => {
       if (digit === "C") return "";
       if (digit === "BS") return prev.slice(0, -1);
@@ -180,6 +209,7 @@ export default function App() {
 
   const completeSale = () => {
     if (cart.length === 0) return;
+    playSound("done");
     const sale = {
       id: Date.now(),
       eventName,
@@ -247,11 +277,19 @@ export default function App() {
 
   const mailCSV = () => {
     if (history.length === 0) return;
+    playSound("tap");
     const subject = encodeURIComponent(`${eventName || "ぬい服レジ"} 売上CSV`);
     const body = encodeURIComponent(
-      `売上CSVです。\n\n${makeCSV()}\n\n※件数が多い場合、メール本文が途中で切れることがあります。その場合はCSV保存も併用してください。`
+      `売上CSVです。
+
+${makeCSV()}
+
+※件数が多い場合、本文が途中で切れることがあります。その場合はCSV保存も併用してください。`
     );
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      SEND_TO_EMAIL
+    )}&su=${subject}&body=${body}`;
+    window.open(url, "_blank");
   };
 
   const clearHistory = () => {
