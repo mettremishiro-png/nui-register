@@ -271,23 +271,21 @@ useEffect(() => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cart, paid, total, totalQty, change, eventName, editMode]);
 
-  const makeCSV = () => {
-    const header = [
-      "イベント名",
-      "会計日時",
-      "作家",
-      "サイズ",
-      "カテゴリ",
-      "単価",
-      "数量",
-      "小計",
-      "会計合計",
-      "お預かり",
-      "お釣り",
-    ];
+  const makeCSV = (filterCreator = null) => {
+  const header = [
+    "イベント名",
+    "会計日時",
+    "作家",
+    "サイズ",
+    "カテゴリ",
+    "単価",
+    "数量",
+  ];
 
-    const rows = history.flatMap((sale) =>
-      sale.items.map((item) => [
+  const rows = history.flatMap((sale) =>
+    sale.items
+      .filter((item) => !filterCreator || item.creator === filterCreator)
+      .map((item) => [
         sale.eventName,
         sale.time,
         item.creator,
@@ -295,55 +293,36 @@ useEffect(() => {
         item.category,
         item.price,
         item.qty,
-        item.price * item.qty,
-        sale.total,
-        sale.paid,
-        sale.change,
       ])
-    );
+  );
 
-    return [header, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
-      .join("\n");
-  };
+  return [header, ...rows]
+    .map((row) =>
+      row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")
+    )
+    .join("\n");
+};
 
-  const exportCSV = () => {
-    const bom = "\uFEFF";
-    const blob = new Blob([bom + makeCSV()], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${eventName || "nui-register"}_sales.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const downloadCSV = (csv, fileName) => {
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
-  const shareCSV = async () => {
-    if (history.length === 0) return;
-    playSound("tap");
+const exportCSV = () => {
+  const baseName = eventName || "nui-register";
 
-    const bom = "\uFEFF";
-    const fileName = `${eventName || "nui-register"}_sales.csv`;
-    const file = new File([bom + makeCSV()], fileName, {
-      type: "text/csv;charset=utf-8;",
-    });
+  downloadCSV(makeCSV(), `${baseName}_全体.csv`);
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: `${eventName || "ぬい服レジ"} 売上CSV`,
-          text: "売上CSVを共有します。",
-          files: [file],
-        });
-        return;
-      } catch {
-        // 共有をキャンセルした場合などはCSV保存へ進む
-      }
-    }
-
-    exportCSV();
-    alert("この端末ではCSV添付の共有に対応していないため、CSVを保存しました。保存したCSVをメールに添付してください。");
-  };
+  creators.forEach((creator) => {
+    downloadCSV(makeCSV(creator.name), `${baseName}_${creator.name}.csv`);
+  });
+};
 
   const clearHistory = () => {
     if (!window.confirm("履歴をすべて削除しますか？")) return;
