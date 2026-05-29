@@ -314,7 +314,7 @@ useEffect(() => {
   URL.revokeObjectURL(url);
 };
 
-const exportCSV = () => {
+  const exportCSV = () => {
   const baseName = eventName || "nui-register";
 
   downloadCSV(makeCSV(), `${baseName}_全体.csv`);
