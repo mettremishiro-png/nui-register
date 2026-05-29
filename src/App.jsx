@@ -271,7 +271,7 @@ useEffect(() => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cart, paid, total, totalQty, change, eventName, editMode]);
 
-  const makeCSV = (filterCreator = null) => {
+const makeCSV = (filterCreator = null) => {
   const header = [
     "イベント名",
     "会計日時",
@@ -303,7 +303,7 @@ useEffect(() => {
     .join("\n");
 };
 
-  const downloadCSV = (csv, fileName) => {
+const downloadCSV = (csv, fileName) => {
   const bom = "\uFEFF";
   const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -314,7 +314,7 @@ useEffect(() => {
   URL.revokeObjectURL(url);
 };
 
-  const exportCSV = () => {
+const exportCSV = () => {
   const baseName = eventName || "nui-register";
 
   downloadCSV(makeCSV(), `${baseName}_全体.csv`);
@@ -324,11 +324,40 @@ useEffect(() => {
   });
 };
 
-  const clearHistory = () => {
-    if (!window.confirm("履歴をすべて削除しますか？")) return;
-    setHistory([]);
-    localStorage.removeItem("nui_sales_history");
-  };
+const shareCSV = async () => {
+  if (history.length === 0) return;
+  playSound("tap");
+
+  const baseName = eventName || "nui-register";
+  const bom = "\uFEFF";
+  const file = new File([bom + makeCSV()], `${baseName}_全体.csv`, {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: `${eventName || "ぬい服レジ"} 売上CSV`,
+        text: "売上CSVを共有します。",
+        files: [file],
+      });
+      return;
+    } catch {
+      // 共有キャンセル時はCSV保存へ
+    }
+  }
+
+  exportCSV();
+  alert(
+    "この端末ではCSV添付の共有に対応していないため、CSVを保存しました。保存したCSVをメールに添付してください。"
+  );
+};
+
+const clearHistory = () => {
+  if (!window.confirm("履歴をすべて削除しますか？")) return;
+  setHistory([]);
+  localStorage.removeItem("nui_sales_history");
+};
 
   const addProduct = () => {
     const size = editForm.size.trim();
