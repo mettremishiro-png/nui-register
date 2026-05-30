@@ -537,61 +537,61 @@ export default function App() {
               <label style={styles.smallLabel}>お預かり金額</label>
               <div style={styles.paidDisplay}>{paid ? yen(paid) : "¥0"}</div>
 
-              <div style={styles.changeBox}>
-                <div style={styles.smallLabel}>お釣り</div>
-                <div style={styles.change}>{yen(change)}</div>
-              </div>
+<div style={styles.changeBox}>
+  <div style={styles.smallLabel}>お釣り</div>
+  <div style={styles.change}>{yen(change)}</div>
+</div>
 
-              <div style={styles.keypad}>
-                {["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0", "BS"].map((key) => (
-                  <button
-                    key={key}
-                    style={key === "BS" ? styles.keypadSubButton : styles.keypadButton}
-                    onClick={() => addPaidDigit(key)}
-                  >
-                    {key === "BS" ? "←" : key}
-                  </button>
-                ))}
-                <button style={styles.keypadClearButton} onClick={() => addPaidDigit("C")}>
-                  C
-                </button>
-              </div>
+<div style={styles.cartListBox}>
+  {cart.length === 0 ? (
+    <div style={styles.empty}>左のボタンを押すとここに入ります</div>
+  ) : (
+    cart.map((item) => (
+      <div key={item.key} style={styles.cartRow}>
+        <div>
+          <span style={{ ...styles.creatorChip, background: item.color }}>
+            {item.creator}
+          </span>
+          <div style={styles.cartName}>
+            {item.size} / {item.category}
+          </div>
+          <div style={styles.cartSub}>
+            {yen(item.price)} × {item.qty} = {yen(item.price * item.qty)}
+          </div>
+        </div>
+        <div style={styles.qtyBox}>
+          <button style={styles.qtyButton} onClick={() => changeQty(item.key, -1)}>
+            −
+          </button>
+          <strong style={styles.qtyNum}>{item.qty}</strong>
+          <button style={styles.qtyButton} onClick={() => changeQty(item.key, 1)}>
+            ＋
+          </button>
+          <button style={styles.deleteButton} onClick={() => removeItem(item.key)}>
+            削除
+          </button>
+        </div>
+      </div>
+    ))
+  )}
+</div>
 
-              <div style={styles.cartListBox}>
-                {cart.length === 0 ? (
-                  <div style={styles.empty}>左のボタンを押すとここに入ります</div>
-                ) : (
-                  cart.map((item) => (
-                    <div key={item.key} style={styles.cartRow}>
-                      <div>
-                        <span style={{ ...styles.creatorChip, background: item.color }}>
-                          {item.creator}
-                        </span>
-                        <div style={styles.cartName}>
-                          {item.size} / {item.category}
-                        </div>
-                        <div style={styles.cartSub}>
-                          {yen(item.price)} × {item.qty} = {yen(item.price * item.qty)}
-                        </div>
-                      </div>
-                      <div style={styles.qtyBox}>
-                        <button style={styles.qtyButton} onClick={() => changeQty(item.key, -1)}>
-                          −
-                        </button>
-                        <strong style={styles.qtyNum}>{item.qty}</strong>
-                        <button style={styles.qtyButton} onClick={() => changeQty(item.key, 1)}>
-                          ＋
-                        </button>
-                        <button style={styles.deleteButton} onClick={() => removeItem(item.key)}>
-                          削除
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+<div style={styles.keypad}>
+  {["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0", "BS"].map((key) => (
+    <button
+      key={key}
+      style={key === "BS" ? styles.keypadSubButton : styles.keypadButton}
+      onClick={() => addPaidDigit(key)}
+    >
+      {key === "BS" ? "←" : key}
+    </button>
+  ))}
+  <button style={styles.keypadClearButton} onClick={() => addPaidDigit("C")}>
+    C
+  </button>
+</div>
 
-              <div style={styles.actionGrid}>
+<div style={styles.actionGrid}>
                 <button style={styles.clearButton} onClick={clearCart}>
                   クリア
                 </button>
