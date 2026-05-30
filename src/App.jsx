@@ -78,9 +78,43 @@ export default function App() {
       return [];
     }
   });
-  const [eventName, setEventName] = useState(
-    localStorage.getItem("nui_event_name") || ""
-  );
+const [eventName, setEventName] = useState(
+  localStorage.getItem("nui_event_name") || ""
+);
+
+useEffect(() => {
+  fetch("Apps ScriptのURL")
+    .then((res) => res.json())
+    .then((data) => {
+      const grouped = { asami: [], yurie: [], mikako: [] };
+
+      data.forEach((item) => {
+        const creator = String(item.creator || "").trim();
+
+        if (!grouped[creator]) return;
+
+        grouped[creator].push({
+          size: String(item.size || "").trim(),
+          category: String(item.category || "").trim(),
+          price: Number(item.price || 0),
+        });
+      });
+
+      setCreatorItems(grouped);
+      localStorage.setItem(
+        "nui_creator_items",
+        JSON.stringify(grouped)
+      );
+    })
+    .catch((error) => {
+      console.log("スプレッドシート読込失敗", error);
+    });
+}, []);
+
+const total = useMemo(
+  () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+  [cart]
+);
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
