@@ -33,14 +33,14 @@ const defaultCreatorItems = {
 const yen = (num) => `¥${Number(num || 0).toLocaleString()}`;
 
 const shortCategory = (category) => {
-  if (category === "Tシャツ") return "T";
-  if (category === "アウター") return "A";
+  if (category === "Tシャツ") return "シャツ";
+  if (category === "アウター") return "アウター";
   if (category === "トップス") return "TOP";
   if (category === "サロペットセット") return "サロペSET";
   if (category === "サロペット") return "サロペ";
   if (category === "羽根つきTシャツ") return "羽根T";
   if (category === "ヘアバンド") return "ヘアバン";
-  if (category === "ジャケット") return "JK";
+  if (category === "ジャケット") return "ジャケット";
   if (category === "小物") return "小物";
   if (category === "その他") return "他";
   return category;
