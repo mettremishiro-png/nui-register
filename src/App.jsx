@@ -116,11 +116,6 @@ const total = useMemo(
   [cart]
 );
 
-  const total = useMemo(
-    () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-    [cart]
-  );
-
   const totalQty = useMemo(
     () => cart.reduce((sum, item) => sum + item.qty, 0),
     [cart]
