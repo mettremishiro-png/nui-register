@@ -83,7 +83,7 @@ const [eventName, setEventName] = useState(
 );
 
 useEffect(() => {
-  fetch("Apps ScriptのURL")
+  fetch("https://script.google.com/macros/s/AKfycbyUjvgENAJ2m9EoPNlnO8M14YQPU4gECJHb-k1GAz3FUU3VjAgsU58KPdC96W6_SszbnQ/exec")
     .then((res) => res.json())
     .then((data) => {
       const grouped = { asami: [], yurie: [], mikako: [] };
