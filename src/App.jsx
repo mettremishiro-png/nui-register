@@ -33,14 +33,14 @@ const defaultCreatorItems = {
 const yen = (num) => `¥${Number(num || 0).toLocaleString()}`;
 
 const shortCategory = (category) => {
-  if (category === "Tシャツ") return "Tシャツ";
-  if (category === "アウター") return "アウター";
+  if (category === "Tシャツ") return "T";
+  if (category === "アウター") return "A";
   if (category === "トップス") return "TOP";
   if (category === "サロペットセット") return "サロペSET";
   if (category === "サロペット") return "サロペ";
   if (category === "羽根つきTシャツ") return "羽根T";
   if (category === "ヘアバンド") return "ヘアバン";
-  if (category === "ジャケット") return "ジャケット";
+  if (category === "ジャケット") return "JK";
   if (category === "小物") return "小物";
   if (category === "その他") return "他";
   return category;
@@ -78,33 +78,9 @@ export default function App() {
       return [];
     }
   });
-const [eventName, setEventName] = useState(
-  localStorage.getItem("nui_event_name") || ""
-);
-
-useEffect(() => {
-  fetch("https://script.google.com/macros/s/AKfycbyUjvgENAJ2m9EoPNlnO8M14YQPU4gECJHb-k1GAz3FUU3VjAgsU58KPdC96W6_SszbnQ/exec")
-    .then((res) => res.json())
-    .then((data) => {
-      const grouped = { asami: [], yurie: [], mikako: [] };
-
-      data.forEach((item) => {
-        if (!grouped[item.creator]) return;
-
-        grouped[item.creator].push({
-          size: item.size,
-          category: item.category,
-          price: Number(item.price),
-        });
-      });
-
-      setCreatorItems(grouped);
-      localStorage.setItem("nui_creator_items", JSON.stringify(grouped));
-    })
-    .catch(() => {
-      console.log("スプレッドシートの商品読込に失敗しました");
-    });
-}, []);
+  const [eventName, setEventName] = useState(
+    localStorage.getItem("nui_event_name") || ""
+  );
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -136,6 +112,10 @@ useEffect(() => {
 
   const playSound = (type = "tap") => {
     try {
+      if (navigator.vibrate) {
+        navigator.vibrate(type === "done" ? 80 : 25);
+      }
+
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       const audio = new AudioContext();
       const oscillator = audio.createOscillator();
@@ -145,14 +125,14 @@ useEffect(() => {
       gain.connect(audio.destination);
 
       oscillator.type = "sine";
-      oscillator.frequency.value = type === "done" ? 880 : type === "delete" ? 260 : 520;
-      gain.gain.setValueAtTime(0.06, audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.08);
+      oscillator.frequency.value = type === "done" ? 880 : type === "delete" ? 260 : 620;
+      gain.gain.setValueAtTime(0.12, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.12);
 
       oscillator.start(audio.currentTime);
-      oscillator.stop(audio.currentTime + 0.08);
+      oscillator.stop(audio.currentTime + 0.12);
     } catch {
-      // 音が鳴らない端末では何もしない
+      if (navigator.vibrate) navigator.vibrate(25);
     }
   };
 
@@ -271,21 +251,23 @@ useEffect(() => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cart, paid, total, totalQty, change, eventName, editMode]);
 
-const makeCSV = (filterCreator = null) => {
-  const header = [
-    "イベント名",
-    "会計日時",
-    "作家",
-    "サイズ",
-    "カテゴリ",
-    "単価",
-    "数量",
-  ];
+  const makeCSV = () => {
+    const header = [
+      "イベント名",
+      "会計日時",
+      "作家",
+      "サイズ",
+      "カテゴリ",
+      "単価",
+      "数量",
+      "小計",
+      "会計合計",
+      "お預かり",
+      "お釣り",
+    ];
 
-  const rows = history.flatMap((sale) =>
-    sale.items
-      .filter((item) => !filterCreator || item.creator === filterCreator)
-      .map((item) => [
+    const rows = history.flatMap((sale) =>
+      sale.items.map((item) => [
         sale.eventName,
         sale.time,
         item.creator,
@@ -293,71 +275,61 @@ const makeCSV = (filterCreator = null) => {
         item.category,
         item.price,
         item.qty,
+        item.price * item.qty,
+        sale.total,
+        sale.paid,
+        sale.change,
       ])
-  );
+    );
 
-  return [header, ...rows]
-    .map((row) =>
-      row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")
-    )
-    .join("\n");
-};
+    return [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+  };
 
-const downloadCSV = (csv, fileName) => {
-  const bom = "\uFEFF";
-  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-};
+  const exportCSV = () => {
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + makeCSV()], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${eventName || "nui-register"}_sales.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-const exportCSV = () => {
-  const baseName = eventName || "nui-register";
+  const shareCSV = async () => {
+    if (history.length === 0) return;
+    playSound("tap");
 
-  downloadCSV(makeCSV(), `${baseName}_全体.csv`);
+    const bom = "\uFEFF";
+    const fileName = `${eventName || "nui-register"}_sales.csv`;
+    const file = new File([bom + makeCSV()], fileName, {
+      type: "text/csv;charset=utf-8;",
+    });
 
-  creators.forEach((creator) => {
-    downloadCSV(makeCSV(creator.name), `${baseName}_${creator.name}.csv`);
-  });
-};
-
-const shareCSV = async () => {
-  if (history.length === 0) return;
-  playSound("tap");
-
-  const baseName = eventName || "nui-register";
-  const bom = "\uFEFF";
-  const file = new File([bom + makeCSV()], `${baseName}_全体.csv`, {
-    type: "text/csv;charset=utf-8;",
-  });
-
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        title: `${eventName || "ぬい服レジ"} 売上CSV`,
-        text: "売上CSVを共有します。",
-        files: [file],
-      });
-      return;
-    } catch {
-      // 共有キャンセル時はCSV保存へ
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `${eventName || "ぬい服レジ"} 売上CSV`,
+          text: "売上CSVを共有します。",
+          files: [file],
+        });
+        return;
+      } catch {
+        // 共有をキャンセルした場合などはCSV保存へ進む
+      }
     }
-  }
 
-  exportCSV();
-  alert(
-    "この端末ではCSV添付の共有に対応していないため、CSVを保存しました。保存したCSVをメールに添付してください。"
-  );
-};
+    exportCSV();
+    alert("この端末ではCSV添付の共有に対応していないため、CSVを保存しました。保存したCSVをメールに添付してください。");
+  };
 
-const clearHistory = () => {
-  if (!window.confirm("履歴をすべて削除しますか？")) return;
-  setHistory([]);
-  localStorage.removeItem("nui_sales_history");
-};
+  const clearHistory = () => {
+    if (!window.confirm("履歴をすべて削除しますか？")) return;
+    setHistory([]);
+    localStorage.removeItem("nui_sales_history");
+  };
 
   const addProduct = () => {
     const size = editForm.size.trim();
@@ -557,38 +529,6 @@ const clearHistory = () => {
             <section style={styles.panel}>
               <h2 style={styles.panelTitle}>会計中</h2>
 
-              {cart.length === 0 ? (
-                <div style={styles.empty}>左のボタンを押すとここに入ります</div>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.key} style={styles.cartRow}>
-                    <div>
-                      <span style={{ ...styles.creatorChip, background: item.color }}>
-                        {item.creator}
-                      </span>
-                      <div style={styles.cartName}>
-                        {item.size} / {item.category}
-                      </div>
-                      <div style={styles.cartSub}>
-                        {yen(item.price)} × {item.qty} = {yen(item.price * item.qty)}
-                      </div>
-                    </div>
-                    <div style={styles.qtyBox}>
-                      <button style={styles.qtyButton} onClick={() => changeQty(item.key, -1)}>
-                        −
-                      </button>
-                      <strong style={styles.qtyNum}>{item.qty}</strong>
-                      <button style={styles.qtyButton} onClick={() => changeQty(item.key, 1)}>
-                        ＋
-                      </button>
-                      <button style={styles.deleteButton} onClick={() => removeItem(item.key)}>
-                        削除
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-
               <div style={styles.totalBox}>
                 <div style={styles.smallLabelLight}>合計 / {totalQty}点</div>
                 <div style={styles.total}>{yen(total)}</div>
@@ -615,6 +555,40 @@ const clearHistory = () => {
                 <button style={styles.keypadClearButton} onClick={() => addPaidDigit("C")}>
                   C
                 </button>
+              </div>
+
+              <div style={styles.cartListBox}>
+                {cart.length === 0 ? (
+                  <div style={styles.empty}>左のボタンを押すとここに入ります</div>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.key} style={styles.cartRow}>
+                      <div>
+                        <span style={{ ...styles.creatorChip, background: item.color }}>
+                          {item.creator}
+                        </span>
+                        <div style={styles.cartName}>
+                          {item.size} / {item.category}
+                        </div>
+                        <div style={styles.cartSub}>
+                          {yen(item.price)} × {item.qty} = {yen(item.price * item.qty)}
+                        </div>
+                      </div>
+                      <div style={styles.qtyBox}>
+                        <button style={styles.qtyButton} onClick={() => changeQty(item.key, -1)}>
+                          −
+                        </button>
+                        <strong style={styles.qtyNum}>{item.qty}</strong>
+                        <button style={styles.qtyButton} onClick={() => changeQty(item.key, 1)}>
+                          ＋
+                        </button>
+                        <button style={styles.deleteButton} onClick={() => removeItem(item.key)}>
+                          削除
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               <div style={styles.actionGrid}>
@@ -779,6 +753,9 @@ const styles = {
     color: "#71717a",
     textAlign: "center",
     fontWeight: 700,
+  },
+  cartListBox: {
+    margin: "12px 0",
   },
   cartRow: {
     display: "grid",
