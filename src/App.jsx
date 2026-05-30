@@ -86,6 +86,8 @@ useEffect(() => {
   fetch("https://script.google.com/macros/s/AKfycbyUjvgENAJ2m9EoPNlnO8M14YQPU4gECJHb-k1GAz3FUU3VjAgsU58KPdC96W6_SszbnQ/exec")
     .then((res) => res.json())
     .then((data) => {
+      alert("スプレッドシート読込成功：" + data.length + "件");
+
       const grouped = { asami: [], yurie: [], mikako: [] };
 
       data.forEach((item) => {
@@ -101,13 +103,11 @@ useEffect(() => {
       });
 
       setCreatorItems(grouped);
-      localStorage.setItem(
-        "nui_creator_items",
-        JSON.stringify(grouped)
-      );
+      localStorage.setItem("nui_creator_items", JSON.stringify(grouped));
     })
     .catch((error) => {
-      console.log("スプレッドシート読込失敗", error);
+      alert("スプレッドシート読込失敗");
+      console.log(error);
     });
 }, []);
 
